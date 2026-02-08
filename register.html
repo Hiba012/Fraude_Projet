@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Créer un compte</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #2c18a0, #006308); /* bleu foncé gradient */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .container {
+        background: #e6f0ff;
+        border-radius: 25px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        width: 360px;
+        padding: 45px;
+        text-align: center;
+    }
+
+    h2 {
+        color: #251e88;
+        margin-bottom: 25px;
+        font-size: 28px;
+    }
+
+    input[type="text"], input[type="email"], input[type="password"] {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        border: 2px solid #251e88;
+        border-radius: 12px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        background-color: #251e88;
+        border: none;
+        color: white;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: 0.3s;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background-color: #0d1477;
+    }
+
+    .switch {
+        margin-top: 18px;
+        font-size: 0.95em;
+    }
+
+    .switch a {
+        color: #251e88;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Créer un compte</h2>
+    <form action="/register" method="POST">
+        <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <button type="submit">S'inscrire</button>
+    </form>
+    <div class="switch">
+        Déjà un compte ? <a href="/login">Connexion</a>
+    </div>
+</div>
+</body>
+</html>
+
+
+
+
