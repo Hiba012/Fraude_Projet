@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>إضافة معاملة</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; background: #f2f2f2; }
+    h1 { color: #776fe2; }
+    form { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; }
+    label { display: block; margin: 10px 0 5px; }
+    input, select { width: 100%; padding: 8px; margin-bottom: 10px; }
+    button { padding: 10px 20px; background: #3498db; color: white; border: none; cursor: pointer; }
+    button:hover { background: #2980b9; }
+    .result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+<h1>🔎 إضافة معاملة جديدة - مرحبا {{ session.user }}</h1>
+
+<form id="fraudForm">
+  <label>المبلغ</label>
+  <input type="number" step="0.01" name="Amount" required>
+
+  <label>نوع العملية</label>
+  <select name="TransactionType">
+    <option value="Purchase">شراء</option>
+    <option value="Withdrawal">سحب</option>
+    <option value="Transfer">تحويل</option>
+  </select>
+
+  <label>المكان</label>
+  <select name="Location">
+    <option value="Chicago">شيكاغو</option>
+    <option value="Houston">هيوستن</option>
+    <option value="Los Angeles">لوس أنجلوس</option>
+    <option value="Miami">ميامي</option>
+    <option value="New York">نيويورك</option>
+  </select>
+
+  <label>نوع الجهاز</label>
+  <select name="DeviceType">
+    <option value="Mobile">هاتف</option>
+    <option value="Laptop">حاسوب محمول</option>
+    <option value="ATM">ATM</option>
+  </select>
+
+  <label>وقت العملية</label>
+  <select name="TimeOfDay">
+    <option value="Morning">صباحا</option>
+    <option value="Afternoon">بعد الظهر</option>
+    <option value="Evening">مساء</option>
+    <option value="Night">ليلا</option>
+  </select>
+
+  <label>عملية احتيال سابقة (0/1)</label>
+  <input type="number" name="PreviousFraud" min="0" max="1" required>
+
+  <label>سرعة العملية</label>
+  <input type="number" step="0.01" name="TransactionSpeed" required>
+
+  <button type="submit">توقع</button>
+</form>
+
+<div class="result" id="result"></div>
+
+<script>
+document.getElementById("fraudForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const payload = {};
+  formData.forEach((value, key) => payload[key] = value);
+
+  const response = await fetch("/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+  document.getElementById("result").innerHTML = `
+    <h3>النتيجة:</h3>
+    <p>التوقع: <b>${data.prediction}</b></p>
+    <p>احتمالية الاحتيال: <b>${data.fraud_probability?.toFixed(4) ?? "N/A"}</b></p>
+  `;
+});
+</script>
+
+<a href="{{ url_for('transaction_page') }}">عودة للصفحة الرئيسية</a>
+<a href="/logout">تسجيل الخروج</a>
+</body>
+</html>
