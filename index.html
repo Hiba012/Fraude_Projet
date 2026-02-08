@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>🔎 Détection de fraude</title>
+<style>
+/* ===== Reset ===== */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+/* ===== Body & Background ===== */
+body, html {
+  height:100%;
+  font-family:'Poppins', sans-serif;
+  direction:rtl;
+  overflow-x:hidden;
+}
+
+/* ===== الخلفية بالصورة + overlay ===== */
+body {
+  background: 
+    linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)),
+    url("{{ url_for('static', filename='images/bg-fraud.png') }}") center/cover no-repeat fixed;
+  color:#fff;
+  position:relative;
+}
+
+/* ===== Animated Neon Glow Circles ===== */
+.bg-glow {
+  position:fixed;
+  top:-150px;
+  left:-150px;
+  width:600px; height:600px;
+  background: radial-gradient(circle, rgb(1, 0, 83), transparent 70%);
+  filter:blur(120px);
+  animation: float 10s infinite alternate ease-in-out;
+  z-index:0;
+}
+
+.bg-glow:nth-child(2){
+  top:auto; bottom:-150px; left:auto; right:-150px;
+  background: radial-gradient(circle, rgba(0,119,255,0.15), transparent 70%);
+  animation-duration: 12s;
+}
+
+@keyframes float {
+  from { transform: translate(0,0); }
+  to { transform: translate(120px,100px); }
+}
+
+/* ===== Content Wrapper ===== */
+.content {
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:60px 20px;
+  min-height:100vh;
+  text-align:center;
+}
+
+/* Overlay داخل content */
+.content::before {
+  content:"";
+  position:absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.15);
+  border-radius:20px;
+  z-index:0;
+}
+
+/* العناصر داخل content فوق overlay */
+.content > * { position:relative; z-index:1; }
+
+/* ===== Neon Title soft pastel ===== */
+h1 {
+  font-size:3em;
+  color:#3998f1; 
+  text-shadow: 0 0 5px #5444e9, 0 0 10px #1e492b, 0 0 20px #0d4d2244, 0 0 30px #6360ff33;
+  margin-bottom:30px;
+  animation: flicker 3s infinite;
+}
+
+@keyframes flicker {
+  0%,19%,21%,23%,25%,54%,56%,100% { opacity:1; }
+  20%,22%,24%,55% { opacity:0.6; }
+}
+
+/* ===== Buttons before form ===== */
+.buttons {
+  margin-bottom:20px;
+}
+.buttons button {
+  padding:14px 30px;
+  margin:5px;
+  font-size:1.1em;
+  border:none;
+  border-radius:50px;
+  cursor:pointer;
+  background: linear-gradient(90deg,#00753f,#023269); /* ← Vert ↔ Bleu */
+  color:#fff;
+  transition:0.3s;
+}
+.buttons button:hover { transform:scale(1.05); }
+
+/* ===== Glassmorphism Form ===== */
+form {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  border-radius:20px;
+  padding:30px;
+  min-width:320px;
+  max-width:600px;
+  text-align:left;
+  box-shadow: 0 0 30px rgba(0,255,255,0.1);
+  transform: translateY(-50px);
+  opacity:0;
+  display:none;
+  animation: fadeSlide 1s forwards 0.5s;
+}
+
+@keyframes fadeSlide {
+  to { opacity:1; transform:translateY(0); }
+}
+
+label { display:block; margin-top:15px; color:#00e6ff; font-weight:600; }
+
+input, select {
+  width:100%;
+  padding:12px;
+  margin-top:5px;
+  border-radius:10px;
+  border:none;
+  background: rgba(0,0,0,0.25);
+  color:#fff;
+  font-size:1em;
+  box-shadow: inset 0 0 10px rgba(0,255,255,0.1);
+  transition:0.3s;
+}
+
+input:focus, select:focus {
+  box-shadow: 0 0 15px #00ffff;
+}
+
+/* ===== Submit Button ===== */
+button[type="submit"] {
+  width:100%;
+  padding:14px;
+  margin-top:20px;
+  background: linear-gradient(90deg,#00753f,#023269); /* ← Vert ↔ Bleu */
+  color:white;
+  font-size:1.2em;
+  font-weight:bold;
+  border-radius:50px;
+  border:none;
+  cursor:pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(0,255,255,0.4);
+}
+
+button[type="submit"]:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(0,255,255,0.7);
+}
+
+/* ===== Result Box ===== */
+.result {
+  margin-top:30px;
+  background: rgba(255,255,255,0.08);
+  padding:20px;
+  border-radius:16px;
+  text-align:center;
+  backdrop-filter:blur(8px);
+  box-shadow: 0 0 25px rgba(0,255,255,0.15);
+  opacity:0;
+  transform: translateY(20px);
+  transition: all 0.5s ease;
+}
+
+.result.show {
+  opacity:1;
+  transform: translateY(0);
+}
+
+/* ===== Footer ===== */
+footer {
+  margin-top:40px;
+  font-size:0.9em;
+  color:rgba(255,255,255,0.5);
+}
+</style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="bg-glow"></div>
+
+  <div class="content">
+    <h1>🔎 Détection de fraude</h1>
+
+    <div class="buttons">
+      <button id="showInfoBtn">Afficher les informations</button>
+      <button id="addAnalyseBtn" onclick="window.location.href='/analyse'">Afficher l'analyse</button>
+      <button id="backBtn" style="display:none;">← Retour</button>
+    </div>
+
+    <form id="fraudForm">
+      <label>Amount</label>
+      <input type="number" step="0.01" name="Amount" required>
+
+      <label>Transaction Type</label>
+      <select name="TransactionType">
+        <option value="Purchase">Purchase</option>
+        <option value="Withdrawal">Withdrawal</option>
+        <option value="Transfer">Transfer</option>
+      </select>
+
+      <label>Location</label>
+      <select name="Location">
+        <option value="Chicago">Chicago</option>
+        <option value="Houston">Houston</option>
+        <option value="Los Angeles">Los Angeles</option>
+        <option value="Miami">Miami</option>
+        <option value="New York">New York</option>
+      </select>
+
+      <label>Device Type</label>
+      <select name="DeviceType">
+        <option value="Mobile">Mobile</option>
+        <option value="Laptop">Laptop</option>
+        <option value="ATM">ATM</option>
+      </select>
+
+      <label>Time Of Day</label>
+      <select name="TimeOfDay">
+        <option value="Morning">Morning</option>
+        <option value="Afternoon">Afternoon</option>
+        <option value="Evening">Evening</option>
+        <option value="Night">Night</option>
+      </select>
+
+      <label>Previous Fraud (0/1)</label>
+      <input type="number" name="PreviousFraud" min="0" max="1" required>
+
+      <label>Transaction Speed</label>
+      <input type="number" step="0.01" name="TransactionSpeed" required>
+
+      <button type="submit">🔮 Prédiction</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <footer>© 2026 Application IA — Détection de fraude intelligente</footer>
+  </div>
+
+<script>
+const showBtn = document.getElementById("showInfoBtn");
+const analyseBtn = document.getElementById("addAnalyseBtn");
+const backBtn = document.getElementById("backBtn");
+const form = document.getElementById("fraudForm");
+const resultBox = document.getElementById("result");
+
+// Afficher le formulaire + cacher les deux boutons initiaux
+showBtn.addEventListener("click", ()=>{
+  form.style.display = "block";
+  showBtn.style.display = "none";
+  analyseBtn.style.display = "none";
+  backBtn.style.display = "inline-block";
+});
+
+// Bouton retour pour revenir à l'état initial
+backBtn.addEventListener("click", ()=>{
+  form.style.display = "none";
+  showBtn.style.display = "inline-block";
+  analyseBtn.style.display = "inline-block";
+  backBtn.style.display = "none";
+  resultBox.classList.remove("show");
+});
+
+// Soumission du formulaire
+form.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const formData = new FormData(form);
+  const payload = {};
+  formData.forEach((v,k)=>payload[k]=v);
+
+  const response = await fetch("/predict",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+  const data = await response.json();
+  resultBox.innerHTML = `
+    <h3>Résultat</h3>
+    <p>🔍 Prediction: <b>${data.prediction}</b></p>
+    <p>⚡ Probabilité de fraude: <b>${(data.fraud_probability?.toFixed(4)) ?? "N/A"}</b></p>
+  `;
+  resultBox.classList.add("show");
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
