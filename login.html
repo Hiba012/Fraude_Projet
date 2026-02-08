@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Connexion</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #005f30, #0972a3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .container {
+        background: #e6f2e6;
+        border-radius: 25px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        width: 360px;
+        padding: 45px;
+        text-align: center;
+    }
+
+    h2 {
+        color: #003f5c;
+        margin-bottom: 25px;
+        font-size: 28px;
+    }
+
+    input[type="email"], input[type="password"] {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        border: 2px solid #0077b6;
+        border-radius: 12px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        background-color: #0077b6;
+        border: none;
+        color: white;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: 0.3s;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background-color: #003f5c;
+    }
+
+    .switch {
+        margin-top: 18px;
+        font-size: 0.95em;
+    }
+
+    .switch a {
+        color: #003f5c;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Connexion</h2>
+    <form action="/login" method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <button type="submit">Se connecter</button>
+    </form>
+    <div class="switch">
+        Pas de compte ? <a href="/register">S'inscrire</a>
+    </div>
+</div>
+</body>
+</html>
