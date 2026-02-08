@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Analyse des transactions</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family:'Poppins', sans-serif;
+      background: 
+        linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)),
+        url("{{ url_for('static', filename='images/bg-fraud.png') }}") center/cover no-repeat fixed;
+      color:#fff;
+      text-align:center;
+      padding:30px;
+      position:relative;
+    }
+
+    .bg-glow { position:fixed; top:-150px; left:-150px; width:600px; height:600px;
+      background: radial-gradient(circle, rgba(0,255,204,0.2), transparent 70%);
+      filter:blur(120px); animation: float 10s infinite alternate ease-in-out; z-index:0;}
+    .bg-glow:nth-child(2){ top:auto; bottom:-150px; left:auto; right:-150px;
+      background: radial-gradient(circle, rgba(0,119,255,0.15), transparent 70%);
+      animation-duration: 12s;}
+    @keyframes float {from{transform:translate(0,0);}to{transform:translate(120px,100px);}}
+
+    .content { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; min-height:100vh; text-align:center; }
+
+    h1 { font-size:3em; color:#14357e; text-shadow: 0 0 5px #66ffcc,0 0 10px #66ffcc88,0 0 20px #66ffcc44,0 0 30px #33ffaa33; margin-bottom:30px; animation: flicker 3s infinite; }
+    @keyframes flicker {0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;}20%,22%,24%,55%{opacity:0.6;}}
+
+    .buttons {
+      margin-bottom:20px;
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    .buttons button {
+      padding:14px 30px;
+      margin:5px;
+      font-size:1.1em;
+      border:none;
+      border-radius:50px;
+      cursor:pointer;
+      background:linear-gradient(90deg,#2c9b9b,#14447a);
+      color:#fff;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      box-shadow: 0 0 15px rgba(0,255,255,0.3), 0 0 25px rgba(0,255,255,0.2);
+      transition: all 0.3s ease-in-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .buttons button::before {
+      content:"";
+      position:absolute;
+      top:0; left:-100%;
+      width:100%; height:100%;
+      background: rgba(255,255,255,0.15);
+      transform: skewX(-20deg);
+      transition: all 0.5s ease-in-out;
+    }
+
+    .buttons button:hover::before {
+      left:200%;
+    }
+
+    .buttons button:hover, .buttons button.active {
+      transform:scale(1.1) translateY(-3px);
+      box-shadow: 0 0 25px #00ffff, 0 0 50px #00ffff88, 0 0 70px #00ffff33;
+      background: linear-gradient(90deg,#00ffff,#0077ff);
+      animation: neonPulse 1.2s infinite alternate;
+    }
+
+    .buttons button:active {
+      transform: scale(1.05) translateY(1px);
+    }
+
+    @keyframes neonPulse {
+      0% { box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff88, 0 0 60px #00ffff33; }
+      50% { box-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff88, 0 0 90px #00ffff33; }
+      100% { box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff88, 0 0 60px #00ffff33; }
+    }
+
+    .graph-container {
+      width:90%;
+      max-width:1000px;
+      margin:20px auto;
+    }
+
+    .plotly-graph-div {
+      background: rgba(0,0,0,0.2);
+      border-radius:20px;
+      padding:10px;
+      box-shadow: 0 0 30px rgba(0,255,255,0.2);
+      margin-bottom:30px;
+    }
+
+    footer { margin-top:40px; font-size:0.9em; color:rgba(255,255,255,0.5);}
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="bg-glow"></div>
+
+  <div class="content">
+    <h1>🔎 Analyse des transactions</h1>
+
+    <div class="buttons">
+      <button onclick="window.location.href='/transaction'">← Retour</button>
+      <button class="btn" onclick="showGraph('univariate')">Univariée</button>
+      <button class="btn" onclick="showGraph('bivariate')">Bivariée</button>
+      <button class="btn" onclick="showGraph('trivariate')">Trivariée</button>
+    </div>
+
+    <div id="graph" class="graph-container"></div>
+
+    <footer>© 2025 Application IA — Détection de fraude intelligente</footer>
+  </div>
+
+<script>
+let transactions = [];
+const colors = ['#66ccff','#ff9999','#99ff99','#ffcc66','#cc99ff','#ff66cc','#66ffcc','#ff9966'];
+
+async function fetchTransactions(){
+    const res = await fetch('/api/transactions');
+    transactions = await res.json();
+    showGraph('univariate');
+}
+
+fetchTransactions();
+
+function showGraph(type){
+    const graphDiv = document.getElementById('graph');
+    graphDiv.innerHTML = '';
+
+    if(!transactions || transactions.length===0){
+        graphDiv.innerHTML = "<p>⚠️ Pas de transactions.</p>";
+        return;
+    }
+
+    const numCols = ["Amount", "PreviousFraud", "TransactionSpeed", "Prediction"];
+    const textCols = ["TransactionType", "Location", "DeviceType", "TimeOfDay"];
+
+    function randomColor(i){ return colors[i % colors.length]; }
+    function hash(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h<<5)-h+str.charCodeAt(i); h|=0;} return h; }
+
+    if(type==='univariate'){
+        numCols.concat(textCols).slice(0,3).forEach((col,i)=>{
+            let trace;
+            if(numCols.includes(col)){
+                trace = {
+                    x: transactions.map(t=>t[col]),
+                    type:'histogram',
+                    marker:{color: randomColor(i), line:{color:'black', width:1}},
+                    name: col
+                };
+            } else {
+                const counts = {};
+                transactions.forEach(t=>{ counts[t[col]] = (counts[t[col]]||0)+1; });
+                trace = {
+                    x:Object.keys(counts),
+                    y:Object.values(counts),
+                    type:'bar',
+                    marker:{color: randomColor(i), line:{color:'black', width:1}},
+                    name: col
+                };
+            }
+            const div = document.createElement('div');
+            div.classList.add('plotly-graph-div');
+            graphDiv.appendChild(div);
+            Plotly.newPlot(div, [trace], {title: col, showlegend:true});
+        });
+    }
+
+    else if(type==='bivariate'){
+        const pairs = [
+            [numCols[0], numCols[1]],
+            [textCols[0], textCols[1]],
+            [numCols[0], textCols[0]]
+        ];
+        pairs.forEach((p,i)=>{
+            let trace, layout;
+            if(numCols.includes(p[0]) && numCols.includes(p[1])){
+                trace = {
+                    x: transactions.map(t=>t[p[0]]),
+                    y: transactions.map(t=>t[p[1]]),
+                    mode:'markers',
+                    type:'scatter',
+                    marker:{color: randomColor(i), line:{color:'black', width:1}},
+                    name:'points'
+                };
+            } else if(!numCols.includes(p[0]) && !numCols.includes(p[1])){
+                const counts = {};
+                transactions.forEach(t=>{ counts[`${t[p[0]]}|${t[p[1]]}`] = (counts[`${t[p[0]]}|${t[p[1]]}`]||0)+1; });
+                trace = {
+                    x:Object.keys(counts),
+                    y:Object.values(counts),
+                    type:'bar',
+                    marker:{color: randomColor(i), line:{color:'black', width:1}},
+                    name:'counts'
+                };
+            } else {
+                const x = transactions.map(t=>numCols.includes(p[0])?t[p[0]]:t[p[0]]);
+                const y = transactions.map(t=>numCols.includes(p[1])?t[p[1]]:t[p[1]]);
+                trace = {
+                    x:x,
+                    y:y,
+                    type:'scatter',
+                    mode:'markers',
+                    marker:{color: randomColor(i), line:{color:'black', width:1}},
+                    name:'points'
+                };
+            }
+            layout = {
+                title:`${p[0]} vs ${p[1]}`,
+                annotations:[{text:`X = ${p[0]}, Y = ${p[1]}`, xref:'paper', yref:'paper', x:1, y:1.05, showarrow:false}]
+            };
+            const div = document.createElement('div');
+            div.classList.add('plotly-graph-div');
+            graphDiv.appendChild(div);
+            Plotly.newPlot(div, [trace], layout);
+        });
+    }
+
+    else if(type==='trivariate'){
+        const triplets = [
+            [numCols[0], numCols[1], numCols[2]],
+            [numCols[0], numCols[1], textCols[0]],
+            [numCols[0], textCols[0], textCols[1]]
+        ];
+        triplets.forEach((t,i)=>{
+            let trace, layout;
+            trace = {
+                x: transactions.map(tr=>numCols.includes(t[0])?tr[t[0]]:hash(tr[t[0]])%10),
+                y: transactions.map(tr=>numCols.includes(t[1])?tr[t[1]]:hash(tr[t[1]])%10),
+                z: transactions.map(tr=>numCols.includes(t[2])?tr[t[2]]:hash(tr[t[2]])%10),
+                mode:'markers',
+                type:'scatter3d',
+                marker:{color: randomColor(i), size:5, line:{color:'black', width:1}},
+                name:'points'
+            };
+            layout = {
+                title:`${t[0]} vs ${t[1]} vs ${t[2]}`,
+                annotations:[{text:`X = ${t[0]}, Y = ${t[1]}, Z = ${t[2]}`, xref:'paper', yref:'paper', x:1, y:1.05, showarrow:false}]
+            };
+            const div = document.createElement('div');
+            div.classList.add('plotly-graph-div');
+            graphDiv.appendChild(div);
+            Plotly.newPlot(div, [trace], layout);
+        });
+    }
+}
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
